@@ -29,10 +29,10 @@
   "n8n": {
     "n8nNodesApiVersion": 1,
     "credentials": [
-      "dist/credentials/ClickHouse.credentials.js"
+      "dist/credentials/ClickHouseApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/ClickHouse/ClickHouse.node.js"
+      "dist/nodes/ClickHouse/Clickhouse.node.js"
     ]
   },
   "devDependencies": {
@@ -40,13 +40,13 @@
     "@types/request-promise-native": "~1.0.15",
     "@typescript-eslint/parser": "~5.45",
     "eslint-plugin-n8n-nodes-base": "^1.11.0",
-    "gulp": "^4.0.2",
+    "gulp": "^5.0.1",
     "n8n-core": "*",
     "n8n-workflow": "*",
     "prettier": "^2.7.1",
     "typescript": "~4.8.4"
   },
   "dependencies": {
-    "@clickhouse/client": "^0.0.13"
+    "@clickhouse/client": "^1.12.0"
   }
 }

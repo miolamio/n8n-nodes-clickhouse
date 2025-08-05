@@ -9,7 +9,7 @@ import type {
 	INodeTypeDescription,
 } from 'n8n-workflow';
 
-import { createClient, ClickHouseClientConfigOptions } from '@clickhouse/client'
+import { createClient, ClickHouseClientConfigOptions } from '@clickhouse/client';
 
 export class ClickHouse implements INodeType {
 	description: INodeTypeDescription = {
@@ -26,7 +26,7 @@ export class ClickHouse implements INodeType {
 		outputs: ['main'],
 		credentials: [
 			{
-				name: 'clickhouse',
+				name: 'clickhouseApi',
 				required: true,
 				testedBy: 'clickhouseConnectionTest',
 			},
@@ -63,13 +63,14 @@ export class ClickHouse implements INodeType {
 					},
 				},
 				default: '',
-				placeholder: 'SELECT id, name FROM product WHERE quantity > {quantity:Int32} AND price <= {price:Int32}',
+				placeholder:
+					'SELECT id, name FROM product WHERE quantity > {quantity:Int32} AND price <= {price:Int32}',
 				required: true,
 				description:
 					'The SQL query to execute. You can use n8n expressions or ClickHouse query parameters.',
 			},
 			{
-				displayName: 'Table name',
+				displayName: 'Table Name',
 				name: 'table',
 				type: 'string',
 				displayOptions: {
@@ -80,8 +81,7 @@ export class ClickHouse implements INodeType {
 				default: '',
 				placeholder: 'product',
 				required: true,
-				description:
-					'The table name to insert data. You can use n8n expressions.',
+				description: 'The table name to insert data. You can use n8n expressions.',
 			},
 			// {
 			// 	displayName: 'Query parameters',
@@ -174,15 +174,14 @@ export class ClickHouse implements INodeType {
 				query: query,
 				format: 'JSONEachRow',
 				query_params: queryParams,
-			})
+			});
 
-
-			const rows = (await result.json()) as object[]
+			const rows = (await result.json()) as object[];
 			console.log('received CH rows', rows);
 
-			returnItems = rows.map(row => ({json: row} as INodeExecutionData))
+			returnItems = rows.map((row) => ({ json: row }) as INodeExecutionData);
 		} else if (operation === 'insert') {
-			const items = this.getInputData().map(value => value.json);
+			const items = this.getInputData().map((value) => value.json);
 			const table = this.getNodeParameter('table', 0) as string;
 
 			console.log('insert CH rows', items);
@@ -192,10 +191,10 @@ export class ClickHouse implements INodeType {
 				format: 'JSONEachRow',
 				values: items,
 				query_params: queryParams,
-			})
+			});
 		}
 
-		await client.close()
+		await client.close();
 
 		return this.prepareOutputData(returnItems);
 	}

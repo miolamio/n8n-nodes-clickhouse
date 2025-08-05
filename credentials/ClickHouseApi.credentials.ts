@@ -1,9 +1,9 @@
 import type { ICredentialType, INodeProperties } from 'n8n-workflow';
 
-export class ClickHouse implements ICredentialType {
-	name = 'clickhouse';
+export class ClickHouseApi implements ICredentialType {
+	name = 'clickhouseApi';
 
-	displayName = 'ClickHouse';
+	displayName = 'ClickHouse API';
 
 	properties: INodeProperties[] = [
 		{
