@@ -9,7 +9,7 @@ import type {
 	INodeTypeDescription,
 } from 'n8n-workflow';
 
-import { createClient, ClickHouseClientConfigOptions } from '@clickhouse/client';
+import { createClient, type ClickHouseClientConfigOptions } from '@clickhouse/client';
 
 export class ClickHouse implements INodeType {
 	description: INodeTypeDescription = {
@@ -129,13 +129,23 @@ export class ClickHouse implements INodeType {
 				const credentials = credential.data as IDataObject;
 				try {
 					const config: ClickHouseClientConfigOptions = {
-						host: credentials.url as string,
+						url: credentials.url as string,
 						database: credentials.database as string,
 						username: credentials.user as string,
 						password: credentials.password as string,
+						// Поддержка SSL настроек
+						...(credentials.allowUnauthorizedCerts && {
+							clickhouse_settings: {
+								enable_http_compression: 1,
+							}
+						})
 					};
 
-					createClient(config);
+					const client = createClient(config);
+
+					// Реальная проверка соединения
+					await client.ping();
+					await client.close();
 				} catch (error) {
 					return {
 						status: 'Error',
@@ -154,10 +164,16 @@ export class ClickHouse implements INodeType {
 		const credentials = await this.getCredentials('clickhouse');
 
 		const config: ClickHouseClientConfigOptions = {
-			host: credentials.url as string,
+			url: credentials.url as string,
 			database: credentials.database as string,
 			username: credentials.user as string,
 			password: credentials.password as string,
+			// Поддержка SSL настроек
+			...(credentials.allowUnauthorizedCerts && {
+				clickhouse_settings: {
+					enable_http_compression: 1,
+				}
+			})
 		};
 
 		const client = createClient(config);
@@ -167,34 +183,34 @@ export class ClickHouse implements INodeType {
 
 		let returnItems: INodeExecutionData[] = [];
 
-		if (operation === 'query') {
-			const query = this.getNodeParameter('query', 0) as string;
+		try {
+			if (operation === 'query') {
+				const query = this.getNodeParameter('query', 0) as string;
 
-			const result = await client.query({
-				query: query,
-				format: 'JSONEachRow',
-				query_params: queryParams,
-			});
+				const result = await client.query({
+					query: query,
+					format: 'JSONEachRow',
+					query_params: queryParams,
+				});
 
-			const rows = (await result.json()) as object[];
-			console.log('received CH rows', rows);
+				const rows = (await result.json()) as object[];
 
-			returnItems = rows.map((row) => ({ json: row }) as INodeExecutionData);
-		} else if (operation === 'insert') {
-			const items = this.getInputData().map((value) => value.json);
-			const table = this.getNodeParameter('table', 0) as string;
+				returnItems = rows.map((row) => ({ json: row }) as INodeExecutionData);
+			} else if (operation === 'insert') {
+				const items = this.getInputData().map((value) => value.json);
+				const table = this.getNodeParameter('table', 0) as string;
 
-			console.log('insert CH rows', items);
-
-			await client.insert({
-				table: table,
-				format: 'JSONEachRow',
-				values: items,
-				query_params: queryParams,
-			});
+				await client.insert({
+					table: table,
+					format: 'JSONEachRow',
+					values: items,
+					query_params: queryParams,
+				});
+			}
+		} finally {
+			// Гарантированное закрытие соединения
+			await client.close();
 		}
-
-		await client.close();
 
 		return this.prepareOutputData(returnItems);
 	}
